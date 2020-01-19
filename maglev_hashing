@@ -1,0 +1,83 @@
+import math
+import siphash
+class MaglevHashing():
+	def __init__(self,m):
+		self.m=m
+		self.permutation=[]
+		self.servers=[]
+                self.server_idx={}
+		self.n=0
+		self.entry=[None]*self.m
+	def h1(self,i):
+		key='012345789abcdefg'
+		sip=siphash.SipHash_2_4(key)
+		return sip.update(str(i)).hash()
+        def h2(self,i):
+		key='asdfghjklqwertyu'
+		sip=siphash.SipHash_2_4(key)
+		return sip.update(str(i)).hash()
+	def generate_permutation(self):
+		n,m=self.n,self.m
+		for i in range(n):
+			buf=[None]*m
+			offset=self.h1(i)%m
+			skip=self.h2(i)%(m-1)+1
+			for j in range(m):
+				buf[j]=(offset+j*skip)%m
+			self.permutation.append(buf)
+	def populate(self):
+ 		n,m=self.n,self.m
+		nexts=[0]*n
+		entries=[-1]*m
+                j=0
+		while True:
+			for i in range(n):
+				c=self.permutation[i][nexts[i]]
+				while entries[c]>=0:
+					nexts[i]+=1
+					c=self.permutation[i][nexts[i]]
+				entries[c]=i
+				nexts[i]+=1
+				j+=1
+				if j==m:
+					self.entry=entries
+					return
+	def lookup_table(self):
+		lookup=[None]*self.m
+		for i,s_i in enumerate(self.entry):
+			lookup[i]=self.servers[s_i]
+		return lookup
+	def remove_servers(self,servers):
+		del_list=[]
+		for s in server:
+			idx=self.servers[s]
+			del_list.append(idx)
+		del_list.sort()
+		bbuf=[]
+		pbuf=[]
+		for d in del_list:
+			if d>start:
+				bbuf.extend(self.servers[start:d])
+				pbuf.extend(self.permutation[start:d])
+			start=d+1
+		self.servers=bbuf
+		self.permutation=pbuf
+		self.n=len(self.servers)
+		self.server_idx={}
+                for i,s in enumerate(self.servers):
+			self.server_idx[s]=i
+		self.populate()
+	def add_servers(self,servers):
+		for s in servers:
+			self.servers.append(s)
+			self.server_idx=self.n
+			self.n+=1
+                self.generate_permutation()
+		self.populate()
+	def get_server(self,request):
+		return self.servers[self.entry[self.h1(request)%self.m]]
+if __name__=='__main__':
+	mh=MaglevHashing(7)
+	mh.add_servers(['server1','server2','server3'])
+        print mh.lookup_table()
+	print mh.get_server('/jinzifeng/')
